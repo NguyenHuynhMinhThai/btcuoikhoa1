@@ -27,7 +27,6 @@ userRouter.post("/DangNhap", async (req, res) => {
     const user = userRows[0];
     return res.json({
       taiKhoan: user.taiKhoan,
-      matKhau: user.matKhau,
       email: user.email,
       soDt: user.soDt,
       maNhom: user.maNhom,
@@ -375,9 +374,9 @@ userRouter.put("/CapNhatThongTinNguoiDung", handleCapNhatThongTinNguoiDung);
 userRouter.post("/CapNhatThongTinNguoiDung", handleCapNhatThongTinNguoiDung);
 
 userRouter.delete("/XoaNguoiDung", async (req, res) => {
-  const taiKhoan = (req.query.taiKhoa || req.query.taiKhoan) as string;
+  const taiKhoan = req.query.taiKhoan as string;
   if (!taiKhoan) {
-    return res.status(400).json({ message: "Thiếu tham số taiKhoa" });
+    return res.status(400).json({ message: "Thiếu tham số taiKhoan" });
   }
 
   try {

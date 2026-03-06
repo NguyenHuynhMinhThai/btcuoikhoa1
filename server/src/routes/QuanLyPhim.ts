@@ -261,6 +261,17 @@ movieRouter.delete("/XoaPhim", async (req, res) => {
   }
 
   try {
+    const [showtimeRows] = await pool.query(
+      "SELECT COUNT(*) as total FROM showtimes WHERE maPhim = ?",
+      [maPhim]
+    );
+    const totalShowtimes = (showtimeRows as any[])[0]?.total ?? 0;
+    if (totalShowtimes > 0) {
+      return res.status(400).json({
+        message: "Không thể xóa phim vì đang có lịch chiếu"
+      });
+    }
+
     await pool.query("DELETE FROM banners WHERE maPhim = ?", [maPhim]);
     const [result] = await pool.query("DELETE FROM movies WHERE maPhim = ?", [maPhim]);
     const affected = (result as any).affectedRows;
@@ -280,6 +291,17 @@ movieRouter.delete("/XP", async (req, res) => {
   }
 
   try {
+    const [showtimeRows] = await pool.query(
+      "SELECT COUNT(*) as total FROM showtimes WHERE maPhim = ?",
+      [maPhim]
+    );
+    const totalShowtimes = (showtimeRows as any[])[0]?.total ?? 0;
+    if (totalShowtimes > 0) {
+      return res.status(400).json({
+        message: "Không thể xóa phim vì đang có lịch chiếu"
+      });
+    }
+
     await pool.query("DELETE FROM banners WHERE maPhim = ?", [maPhim]);
     const [result] = await pool.query("DELETE FROM movies WHERE maPhim = ?", [maPhim]);
     const affected = (result as any).affectedRows;

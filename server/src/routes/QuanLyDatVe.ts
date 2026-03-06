@@ -95,6 +95,14 @@ bookingRouter.post("/DatVe", async (req, res) => {
   }
 
   try {
+    const [showtimeRows] = await pool.query(
+      "SELECT maLichChieu FROM showtimes WHERE maLichChieu = ?",
+      [maLichChieu]
+    );
+    if ((showtimeRows as any[]).length === 0) {
+      return res.status(404).json({ message: "Không tìm thấy lịch chiếu" });
+    }
+
     const [userRows] = await pool.query("SELECT id FROM users WHERE taiKhoan = ?", [taiKhoan]);
     const users = userRows as any[];
     if (users.length === 0) {
@@ -144,7 +152,7 @@ bookingRouter.post("/TaoLichChieu", async (req, res) => {
   const { maPhim, ngayChieuGioChieu, maRap, giaVe } = req.body as {
     maPhim: number;
     ngayChieuGioChieu: string;
-    maRap: string;
+    maRap: string | number;
     giaVe: number;
   };
 
@@ -152,25 +160,40 @@ bookingRouter.post("/TaoLichChieu", async (req, res) => {
     return res.status(400).json({ message: "Thiếu tham số: maPhim, ngayChieuGioChieu, maRap, giaVe" });
   }
 
-  const parts = String(ngayChieuGioChieu).split("T");
-  const ngayChieu = parts[0];
-  const gioPart = parts[1] || "00:00:00";
-  const gioChieu = gioPart.length >= 8 ? gioPart.slice(0, 8) : gioPart + "00".slice(0, 8);
+  const dateTimeRaw = String(ngayChieuGioChieu).trim();
+  const [datePart, timePartRaw] = dateTimeRaw.includes("T")
+    ? dateTimeRaw.split("T")
+    : dateTimeRaw.split(" ");
+  const ngayChieu = datePart;
+  const baseTime = (timePartRaw || "00:00:00").trim();
+  const gioChieu =
+    baseTime.length >= 8
+      ? baseTime.slice(0, 8)
+      : (baseTime + "00:00:00").slice(0, 8);
+
+  const maRapNormalized =
+    typeof maRap === "number" ? String(maRap) : String(maRap).trim();
 
   try {
-    const [existingTheater] = await pool.query("SELECT maRap FROM theaters WHERE maRap = ?", [maRap]);
+    const [existingTheater] = await pool.query(
+      "SELECT maRap FROM theaters WHERE maRap = ?",
+      [maRapNormalized]
+    );
     if ((existingTheater as any[]).length === 0) {
       return res.status(400).json({ message: "Không tìm thấy rạp" });
     }
 
-    const [existingMovie] = await pool.query("SELECT maPhim FROM movies WHERE maPhim = ?", [maPhim]);
+    const [existingMovie] = await pool.query(
+      "SELECT maPhim FROM movies WHERE maPhim = ?",
+      [maPhim]
+    );
     if ((existingMovie as any[]).length === 0) {
       return res.status(400).json({ message: "Không tìm thấy phim" });
     }
 
     const [result] = await pool.query(
       "INSERT INTO showtimes (maPhim, maRap, ngayChieu, gioChieu, giaVe) VALUES (?, ?, ?, ?, ?)",
-      [maPhim, maRap, ngayChieu, gioChieu, giaVe]
+      [maPhim, maRapNormalized, ngayChieu, gioChieu, giaVe]
     );
     const maLichChieu = (result as any).insertId;
 

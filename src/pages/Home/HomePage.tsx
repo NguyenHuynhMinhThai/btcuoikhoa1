@@ -5,18 +5,27 @@ import { movieApi } from "../../api/movieApi";
 import type { Movie, MovieBanner } from "../../models/movie";
 
 export const HomePage: React.FC = () => {
-  const { data: banners = [], isLoading: bannersLoading } = useQuery({
+  const {
+    data: banners = [],
+    isLoading: bannersLoading,
+    error: bannersError
+  } = useQuery<MovieBanner[]>({
     queryKey: ["banners"],
     queryFn: async () => {
       const res = await movieApi.getBanners();
-      return res.data as MovieBanner[];
+      return res.data;
     }
   });
-  const { data: movies = [], isLoading: moviesLoading } = useQuery({
+
+  const {
+    data: movies = [],
+    isLoading: moviesLoading,
+    error: moviesError
+  } = useQuery<Movie[]>({
     queryKey: ["movies"],
     queryFn: async () => {
       const res = await movieApi.getMovies();
-      return res.data as Movie[];
+      return res.data;
     }
   });
 
@@ -24,6 +33,14 @@ export const HomePage: React.FC = () => {
     return (
       <div className="flex-center" style={{ minHeight: 300 }}>
         <div className="loader" />
+      </div>
+    );
+  }
+
+  if (bannersError || moviesError) {
+    return (
+      <div className="flex-center" style={{ minHeight: 300 }}>
+        <p>Đã xảy ra lỗi khi tải dữ liệu. Vui lòng thử lại sau.</p>
       </div>
     );
   }

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { bookingApi } from "../../api/bookingApi";
-import type { SeatInfo } from "../../models/booking";
+import type { RoomInfo, SeatInfo } from "../../models/booking";
 
 export const BookingPage: React.FC = () => {
   const { showtimeId } = useParams<{ showtimeId: string }>();
@@ -10,7 +10,11 @@ export const BookingPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Map<number, number>>(new Map());
 
-  const { data, isLoading } = useQuery({
+  const {
+    data,
+    isLoading,
+    error
+  } = useQuery<RoomInfo>({
     queryKey: ["room", showtimeId],
     queryFn: () => bookingApi.getRoomInfo(showtimeId!).then((r) => r.data),
     enabled: !!showtimeId
@@ -55,7 +59,7 @@ export const BookingPage: React.FC = () => {
     });
   };
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div className="flex-center" style={{ minHeight: 300 }}>
         <div className="loader" />
@@ -63,8 +67,16 @@ export const BookingPage: React.FC = () => {
     );
   }
 
-  const phim = (data as any).thongTinPhim;
-  const seats = (data as any).danhSachGhe as SeatInfo[];
+  if (error || !data) {
+    return (
+      <div className="flex-center" style={{ minHeight: 300 }}>
+        <p>Không tải được thông tin phòng vé. Vui lòng thử lại sau.</p>
+      </div>
+    );
+  }
+
+  const phim = data.thongTinPhim;
+  const seats = data.danhSachGhe as SeatInfo[];
 
   return (
     <div>
@@ -87,7 +99,12 @@ export const BookingPage: React.FC = () => {
       </div>
       <div className="card mt-3">
         <div>Tổng tiền: {total.toLocaleString("vi-VN")} đ</div>
-        <button type="button" className="btn mt-2" onClick={handleBook} disabled={bookMutation.isPending}>
+        <button
+          type="button"
+          className="btn mt-2"
+          onClick={handleBook}
+          disabled={bookMutation.isPending || danhSachVe.length === 0}
+        >
           {bookMutation.isPending ? "Đang xử lý..." : "Đặt vé"}
         </button>
       </div>
